@@ -29,35 +29,50 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [intents, setIntents] = useState<PaymentIntent[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [timeframe, setTimeframe] = useState<7 | 30>(30);
 
-    const fetchData = async () => {
-        setIsLoading(true);
+    const fetchAnalytics = async (showLoading = false) => {
+        if (showLoading) setIsAnalyticsLoading(true);
         try {
             const headers: Record<string, string> = {};
             if (apiKey) headers['x-api-key'] = apiKey;
-
-            const [statsRes, listRes] = await Promise.all([
-                fetch(`${baseUrl}/analytics?days=${timeframe}`, { headers }),
-                fetch(`${baseUrl}/payments`, { headers }),
-            ]);
-
-            if (statsRes.ok && listRes.ok) {
-                const stats = await statsRes.json();
-                const list = await listRes.json();
+            const res = await fetch(`${baseUrl}/analytics?days=${timeframe}`, { headers });
+            if (res.ok) {
+                const stats = await res.json();
                 setAnalytics(stats);
-                setIntents(list);
             }
         } catch (error) {
-            console.error('Failed to fetch dashboard data:', error);
+            console.error('Failed to fetch analytics:', error);
         } finally {
-            setIsLoading(false);
+            if (showLoading) setIsAnalyticsLoading(false);
         }
     };
 
+    const fetchPayments = async () => {
+        try {
+            const headers: Record<string, string> = {};
+            if (apiKey) headers['x-api-key'] = apiKey;
+            const res = await fetch(`${baseUrl}/payments`, { headers });
+            if (res.ok) {
+                const list = await res.json();
+                setIntents(list);
+            }
+        } catch (error) {
+            console.error('Failed to fetch payments:', error);
+        }
+    };
+
+    // Initial load for payments
     useEffect(() => {
-        fetchData();
+        setIsLoading(true);
+        fetchPayments().then(() => setIsLoading(false));
+    }, [apiKey, baseUrl]);
+
+    // Analytics load (including timeframe changes)
+    useEffect(() => {
+        fetchAnalytics(true);
     }, [apiKey, baseUrl, timeframe]);
 
     const renderContent = () => {
@@ -66,24 +81,44 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                 return (
                     <div className="space-y-6">
                         <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-6">
-                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl">
+                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl relative overflow-hidden">
+                                {isAnalyticsLoading && (
+                                    <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
+                                        <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                )}
                                 <p className="text-gray-400 text-sm font-medium">Total Volume</p>
                                 <h3 className="text-3xl font-bold mt-1 text-white">${analytics?.totalRevenue.toFixed(2)}</h3>
                                 <p className="text-emerald-400 text-xs mt-2">↑ 12% from last month</p>
                             </div>
-                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl">
+                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl relative overflow-hidden">
+                                {isAnalyticsLoading && (
+                                    <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
+                                        <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                )}
                                 <p className="text-gray-400 text-sm font-medium">Payment Intents</p>
                                 <h3 className="text-3xl font-bold mt-1 text-white">{analytics?.transactionCount}</h3>
                                 <p className="text-gray-500 text-xs mt-2">Past 30 days</p>
                             </div>
-                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl">
+                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl relative overflow-hidden">
+                                {isAnalyticsLoading && (
+                                    <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
+                                        <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                )}
                                 <p className="text-gray-400 text-sm font-medium">Settlement Rate</p>
                                 <h3 className="text-3xl font-bold mt-1 text-white">{analytics?.settlementRate.toFixed(1)}%</h3>
                                 <p className="text-emerald-400 text-xs mt-2">High performance</p>
                             </div>
                         </div>
 
-                        <div className="bg-[#111] border border-white/10 p-6 rounded-2xl h-[400px]">
+                        <div className="bg-[#111] border border-white/10 p-6 rounded-2xl h-[400px] relative overflow-hidden">
+                            {isAnalyticsLoading && (
+                                <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
+                                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-semibold text-lg">Revenue Over Time</h3>
                                 <div className="flex gap-2">
