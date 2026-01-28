@@ -1,7 +1,8 @@
 # Development files
 src/
+test-app/
 test-drive.ts
-test-paygrid.db
+paygrid.db
 paygrid.db*
 tsconfig.json
 .agent/
