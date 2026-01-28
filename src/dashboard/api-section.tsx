@@ -60,6 +60,29 @@ const ApiKeysSection: React.FC<ApiKeysSectionProps> = ({ apiKey, baseUrl }) => {
     }
   };
 
+  const revokeKey = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to revoke the key "${name}"? This action cannot be undone.`)) return;
+
+    setIsLoading(true);
+    try {
+      const headers: Record<string, string> = {};
+      if (apiKey) headers['x-api-key'] = apiKey;
+
+      const res = await fetch(`${baseUrl}/api-keys/${id}`, {
+        method: 'DELETE',
+        headers
+      });
+
+      if (res.ok) {
+        fetchKeys();
+      }
+    } catch (error) {
+      console.error('Failed to revoke API key:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchKeys();
   }, [apiKey, baseUrl]);
@@ -129,7 +152,12 @@ const ApiKeysSection: React.FC<ApiKeysSectionProps> = ({ apiKey, baseUrl }) => {
                   <p className="text-[10px] text-gray-500 uppercase font-bold">Created</p>
                   <p className="text-sm">{new Date(key.createdAt).toLocaleDateString()}</p>
                 </div>
-                <button className="text-red-400 hover:text-red-300 text-xs font-semibold p-2">Revoke</button>
+                <button
+                  onClick={() => revokeKey(key.id, key.name)}
+                  className="text-red-400 hover:text-red-300 text-xs font-semibold p-2"
+                >
+                  Revoke
+                </button>
               </div>
             </div>
           ))

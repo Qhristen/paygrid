@@ -38,6 +38,8 @@ export interface PayGridConfig {
 
 export interface AnalyticsData {
   totalRevenue: number;
+  revenueGrowth: number;
+  pastRevenue: number;
   transactionCount: number;
   settlementRate: number;
   history: { date: string; amount: number }[];
