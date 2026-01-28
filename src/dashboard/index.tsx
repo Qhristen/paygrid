@@ -1,0 +1,180 @@
+import React, { useState, useEffect } from 'react';
+import {
+    CircleDollarSign,
+    History,
+    Key,
+    TrendingUp,
+    ExternalLink,
+    Search,
+    Plus,
+} from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { Icons } from './constant';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { AnalyticsData, PaymentIntent } from '../types';
+import PaymentsTable from './payment-table';
+import ApiKeysSection from './api-section';
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
+
+export function PayGridDashboard() {
+    const [activeTab, setActiveTab] = useState<'overview' | 'payments' | 'apikeys'>('overview');
+    const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+    const [intents, setIntents] = useState<PaymentIntent[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+      const fetchData = async () => {
+        setIsLoading(true);
+        const [stats, list] = await Promise.all([
+       ()=>{},
+       ()=>{},
+        ]);
+        setAnalytics(stats as any);
+        setIntents(list as any);
+        setIsLoading(false);
+      };
+
+      useEffect(() => {
+        fetchData();
+      }, []);
+
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'overview':
+                return (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl">
+                                <p className="text-gray-400 text-sm font-medium">Total Volume</p>
+                                <h3 className="text-3xl font-bold mt-1 text-white">${analytics?.totalRevenue.toFixed(2)}</h3>
+                                <p className="text-emerald-400 text-xs mt-2">↑ 12% from last month</p>
+                            </div>
+                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl">
+                                <p className="text-gray-400 text-sm font-medium">Payment Intents</p>
+                                <h3 className="text-3xl font-bold mt-1 text-white">{analytics?.transactionCount}</h3>
+                                <p className="text-gray-500 text-xs mt-2">Past 30 days</p>
+                            </div>
+                            <div className="bg-[#111] border border-white/10 p-6 rounded-2xl">
+                                <p className="text-gray-400 text-sm font-medium">Settlement Rate</p>
+                                <h3 className="text-3xl font-bold mt-1 text-white">{analytics?.settlementRate.toFixed(1)}%</h3>
+                                <p className="text-emerald-400 text-xs mt-2">High performance</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-[#111] border border-white/10 p-6 rounded-2xl h-[400px]">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-semibold text-lg">Revenue Over Time</h3>
+                                <div className="flex gap-2">
+                                    <span className="text-xs bg-white/5 border border-white/10 px-3 py-1 rounded-full text-gray-400">7D</span>
+                                    <span className="text-xs bg-indigo-500/20 border border-indigo-500/30 px-3 py-1 rounded-full text-indigo-400">30D</span>
+                                </div>
+                            </div>
+                            <ResponsiveContainer width="100%" height="80%">
+                                <AreaChart data={analytics?.history}>
+                                    <defs>
+                                        <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                                    <XAxis dataKey="date" stroke="#444" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#444" fontSize={12} tickLine={false} axisLine={false} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
+                                        itemStyle={{ color: '#fff' }}
+                                    />
+                                    <Area type="monotone" dataKey="amount" stroke="#6366f1" fillOpacity={1} fill="url(#colorAmt)" strokeWidth={2} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        <div className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden">
+                            <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center">
+                                <h3 className="font-semibold">Recent Activity</h3>
+                                <button onClick={() => setActiveTab('payments')} className="text-xs text-indigo-400 hover:text-indigo-300">View all</button>
+                            </div>
+                            <PaymentsTable intents={intents?.slice(0, 5)} />
+                        </div>
+                    </div>
+                );
+            case 'payments':
+                return <PaymentsTable intents={intents} isFullPage />;
+            case 'apikeys':
+                return <ApiKeysSection />;
+        }
+    };
+
+    return (
+        <div className="flex min-h-screen">
+            {/* Sidebar */}
+            <aside className="w-64 border-r border-white/10 flex flex-col fixed h-full bg-[#050505] z-20">
+                <div className="p-6">
+                    <div className="flex items-center gap-2 mb-8">
+                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg">P</div>
+                        <span className="font-bold text-xl tracking-tight">PayGrid</span>
+                    </div>
+
+                    <nav className="space-y-1">
+                        <button
+                            onClick={() => setActiveTab('overview')}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Icons.Dashboard /> Overview
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('payments')}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'payments' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Icons.Payments /> Payments
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('apikeys')}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'apikeys' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Icons.Key /> API Keys
+                        </button>
+                    </nav>
+                </div>
+
+                <div className="mt-auto p-6 border-t border-white/10">
+                    <div className="flex items-center gap-3">
+                        <img src="https://picsum.photos/32/32" className="w-8 h-8 rounded-full" alt="User" />
+                        <div className="flex flex-col">
+                            <span className="text-sm font-medium">Merchant Account</span>
+                            <span className="text-xs text-gray-500">Live Mode</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <main className="flex-1 ml-64 p-8">
+                <header className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-2xl font-bold capitalize">{activeTab}</h1>
+                        <p className="text-gray-500 text-sm">Manage your Solana payments infrastructure</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                                <Icons.Search />
+                            </div>
+                            <input type="text" placeholder="Search intents..." className="bg-[#111] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
+                        </div>
+                    </div>
+                </header>
+
+                {isLoading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                ) : renderContent()}
+            </main>
+        </div>
+    );
+}
+

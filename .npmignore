@@ -1,0 +1,16 @@
+# Development files
+src/
+test-drive.ts
+test-paygrid.db
+paygrid.db*
+tsconfig.json
+.agent/
+.gemini/
+
+# Node environment
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# Build tools

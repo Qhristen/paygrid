@@ -1,0 +1,58 @@
+{
+  "name": "@paygrid/core",
+  "version": "0.1.0",
+  "description": "Self-hosted Web3 payments infrastructure for Solana",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsc -w",
+    "build": "npm run clean && npm run build:css && tsc",
+    "build:css": "tailwindcss -i ./src/index.css -o ./dist/index.css --minify",
+    "clean": "rimraf dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:drive": "tsx test-drive.ts",
+    "prepublishOnly": "npm run build",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "solana",
+    "web3",
+    "payments",
+    "nextjs",
+    "crypto"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@libsql/client": "^0.6.0",
+    "@solana/web3.js": "^1.95.8",
+    "bcryptjs": "^2.4.3",
+    "bs58": "^6.0.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.454.0",
+    "recharts": "^3.7.0",
+    "tailwind-merge": "^2.5.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.17.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "rimraf": "^6.1.2",
+    "tailwindcss": "^4.1.18",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "next": ">=13.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}
