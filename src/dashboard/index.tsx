@@ -30,6 +30,7 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
     const [intents, setIntents] = useState<PaymentIntent[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [timeframe, setTimeframe] = useState<7 | 30>(30);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -38,7 +39,7 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
             if (apiKey) headers['x-api-key'] = apiKey;
 
             const [statsRes, listRes] = await Promise.all([
-                fetch(`${baseUrl}/analytics`, { headers }),
+                fetch(`${baseUrl}/analytics?days=${timeframe}`, { headers }),
                 fetch(`${baseUrl}/payments`, { headers }),
             ]);
 
@@ -57,7 +58,7 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
 
     useEffect(() => {
         fetchData();
-    }, [apiKey, baseUrl]);
+    }, [apiKey, baseUrl, timeframe]);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -86,8 +87,28 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-semibold text-lg">Revenue Over Time</h3>
                                 <div className="flex gap-2">
-                                    <span className="text-xs bg-white/5 border border-white/10 px-3 py-1 rounded-full text-gray-400">7D</span>
-                                    <span className="text-xs bg-indigo-500/20 border border-indigo-500/30 px-3 py-1 rounded-full text-indigo-400">30D</span>
+                                    <button
+                                        onClick={() => setTimeframe(7)}
+                                        className={cn(
+                                            "text-xs px-3 py-1 rounded-full transition-all border",
+                                            timeframe === 7
+                                                ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400"
+                                                : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                                        )}
+                                    >
+                                        7D
+                                    </button>
+                                    <button
+                                        onClick={() => setTimeframe(30)}
+                                        className={cn(
+                                            "text-xs px-3 py-1 rounded-full transition-all border",
+                                            timeframe === 30
+                                                ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400"
+                                                : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                                        )}
+                                    >
+                                        30D
+                                    </button>
                                 </div>
                             </div>
                             <ResponsiveContainer width="100%" height="80%">

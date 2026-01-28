@@ -130,16 +130,30 @@ export class PayGrid {
     return await this.db.getAllPayments();
   }
 
-  async getAnalytics(): Promise<AnalyticsData> {
+  async getAnalytics(days: number = 30): Promise<AnalyticsData> {
     const payments = await this.db.getAllPayments();
+    const now = Date.now();
+    const startTime = now - days * 24 * 60 * 60 * 1000;
+    
     const settled = payments.filter(p => p.status === 'settled');
+    const filteredSettled = settled.filter(p => p.createdAt >= startTime);
     const totalRevenue = settled.reduce((sum, p) => sum + p.amount, 0);
     
-    // Group by date for history (last 7 days by default if we want, but here we just take all for now)
+    // Group by date for history
     const historyMap = new Map<string, number>();
-    settled.forEach(p => {
+    
+    // Initialize map with all dates in the range to ensure zero values are shown
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now - i * 24 * 60 * 60 * 1000);
+      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      historyMap.set(dateStr, 0);
+    }
+
+    filteredSettled.forEach(p => {
       const date = new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      historyMap.set(date, (historyMap.get(date) || 0) + p.amount);
+      if (historyMap.has(date)) {
+        historyMap.set(date, (historyMap.get(date) || 0) + p.amount);
+      }
     });
 
     const history = Array.from(historyMap.entries())
@@ -148,8 +162,8 @@ export class PayGrid {
     return {
       totalRevenue,
       transactionCount: payments.length,
-      settlementRate: payments.length > 0 ? (settled.length / payments.length) * 100 : 0,
-      history: history.length > 0 ? history : [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), amount: 0 }]
+      settlementRate: payments.length > 0 ? (settled.filter(p => p.status === 'settled').length / payments.length) * 100 : 0,
+      history
     };
   }
 }

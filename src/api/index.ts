@@ -40,7 +40,9 @@ export function createApiHandler(paygrid: PayGrid) {
 
       if (resource === 'analytics') {
         if (req.method === 'GET') {
-          const stats = await paygrid.getAnalytics();
+          const { searchParams } = new URL(req.url);
+          const days = parseInt(searchParams.get('days') || '30', 10);
+          const stats = await paygrid.getAnalytics(days);
           return NextResponse.json(stats);
         }
       }
