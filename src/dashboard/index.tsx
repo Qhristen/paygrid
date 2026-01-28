@@ -32,6 +32,7 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
     const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [timeframe, setTimeframe] = useState<7 | 30>(30);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const fetchAnalytics = async (showLoading = false) => {
         if (showLoading) setIsAnalyticsLoading(true);
@@ -75,6 +76,16 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
         fetchAnalytics(true);
     }, [apiKey, baseUrl, timeframe]);
 
+    const filteredIntents = intents.filter(intent => {
+        const query = searchQuery.toLowerCase();
+        return (
+            intent.id.toLowerCase().includes(query) ||
+            intent.status.toLowerCase().includes(query) ||
+            intent.amount.toString().includes(query) ||
+            (intent.walletAddress && intent.walletAddress.toLowerCase().includes(query))
+        );
+    });
+
     const renderContent = () => {
         switch (activeTab) {
             case 'overview':
@@ -89,7 +100,9 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                                 )}
                                 <p className="text-gray-400 text-sm font-medium">Total Volume</p>
                                 <h3 className="text-3xl font-bold mt-1 text-white">${analytics?.totalRevenue.toFixed(2)}</h3>
-                                <p className="text-emerald-400 text-xs mt-2">↑ 12% from last month</p>
+                                <p className={cn("text-xs mt-2", (analytics?.revenueGrowth || 0) >= 0 ? "text-emerald-400" : "text-red-400")}>
+                                    {(analytics?.revenueGrowth || 0) >= 0 ? '↑' : '↓'} {Math.abs(analytics?.revenueGrowth || 0).toFixed(1)}% from last {timeframe === 30 ? 'month' : 'week'}
+                                </p>
                             </div>
                             <div className="bg-[#111] border border-white/10 p-6 rounded-2xl relative overflow-hidden">
                                 {isAnalyticsLoading && (
@@ -99,7 +112,7 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                                 )}
                                 <p className="text-gray-400 text-sm font-medium">Payment Intents</p>
                                 <h3 className="text-3xl font-bold mt-1 text-white">{analytics?.transactionCount}</h3>
-                                <p className="text-gray-500 text-xs mt-2">Past 30 days</p>
+                                <p className="text-gray-500 text-xs mt-2">Past {timeframe} days</p>
                             </div>
                             <div className="bg-[#111] border border-white/10 p-6 rounded-2xl relative overflow-hidden">
                                 {isAnalyticsLoading && (
@@ -146,8 +159,8 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                                     </button>
                                 </div>
                             </div>
-                            <ResponsiveContainer width="100%" height="80%">
-                                <AreaChart data={analytics?.history}>
+                            <ResponsiveContainer width="100%" height="80%" minWidth={0}>
+                                <AreaChart data={analytics?.history || []}>
                                     <defs>
                                         <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -171,12 +184,12 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                                 <h3 className="font-semibold">Recent Activity</h3>
                                 <button onClick={() => setActiveTab('payments')} className="text-xs text-indigo-400 hover:text-indigo-300">View all</button>
                             </div>
-                            <PaymentsTable intents={intents?.slice(0, 5)} />
+                            <PaymentsTable intents={filteredIntents.slice(0, 5)} />
                         </div>
                     </div>
                 );
             case 'payments':
-                return <PaymentsTable intents={intents} isFullPage />;
+                return <PaymentsTable intents={filteredIntents} isFullPage />;
             case 'apikeys':
                 return <ApiKeysSection apiKey={apiKey} baseUrl={baseUrl} />;
         }
@@ -214,19 +227,19 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                     <nav className="space-y-1">
                         <button
                             onClick={() => { setActiveTab('overview'); setIsSidebarOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                            className={`w-full cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
                             <Icons.Dashboard /> Overview
                         </button>
                         <button
                             onClick={() => { setActiveTab('payments'); setIsSidebarOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'payments' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                            className={`w-full cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'payments' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
                             <Icons.Payments /> Payments
                         </button>
                         <button
                             onClick={() => { setActiveTab('apikeys'); setIsSidebarOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'apikeys' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                            className={`w-full cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'apikeys' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
                             <Icons.Key /> API Keys
                         </button>
@@ -264,7 +277,13 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
                                 <Icons.Search />
                             </div>
-                            <input type="text" placeholder="Search intents..." className="w-full bg-[#111] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
+                            <input
+                                type="text"
+                                placeholder="Search intents..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-[#111] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                            />
                         </div>
                     </div>
                 </header>

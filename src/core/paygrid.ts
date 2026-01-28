@@ -126,6 +126,10 @@ export class PayGrid {
     return await this.db.listApiKeys();
   }
 
+  async deleteApiKey(id: string) {
+    return await this.db.deleteApiKey(id);
+  }
+
   async getPayments() {
     return await this.db.getAllPayments();
   }
@@ -136,8 +140,22 @@ export class PayGrid {
     const startTime = now - days * 24 * 60 * 60 * 1000;
     
     const settled = payments.filter(p => p.status === 'settled');
+    
+    // Current period metrics
     const filteredSettled = settled.filter(p => p.createdAt >= startTime);
-    const totalRevenue = settled.reduce((sum, p) => sum + p.amount, 0);
+    const totalRevenue = filteredSettled.reduce((sum, p) => sum + p.amount, 0);
+    
+    // Previous period metrics
+    const prevStartTime = startTime - (days * 24 * 60 * 60 * 1000);
+    const prevPeriodSettled = settled.filter(p => p.createdAt >= prevStartTime && p.createdAt < startTime);
+    const pastRevenue = prevPeriodSettled.reduce((sum, p) => sum + p.amount, 0);
+    
+    let revenueGrowth = 0;
+    if (pastRevenue > 0) {
+      revenueGrowth = ((totalRevenue - pastRevenue) / pastRevenue) * 100;
+    } else if (totalRevenue > 0) {
+      revenueGrowth = 100;
+    }
     
     // Group by date for history
     const historyMap = new Map<string, number>();
@@ -159,10 +177,16 @@ export class PayGrid {
     const history = Array.from(historyMap.entries())
       .map(([date, amount]) => ({ date, amount }));
 
+    // Filter all payments for the period for transactionCount and settlementRate calculations
+    const filteredPayments = payments.filter(p => p.createdAt >= startTime);
+    const filteredSettledCount = filteredPayments.filter(p => p.status === 'settled').length;
+
     return {
       totalRevenue,
-      transactionCount: payments.length,
-      settlementRate: payments.length > 0 ? (settled.filter(p => p.status === 'settled').length / payments.length) * 100 : 0,
+      revenueGrowth,
+      pastRevenue,
+      transactionCount: filteredPayments.length,
+      settlementRate: filteredPayments.length > 0 ? (filteredSettledCount / filteredPayments.length) * 100 : 0,
       history
     };
   }

@@ -58,6 +58,11 @@ export function createApiHandler(paygrid: PayGrid) {
           const keys = await paygrid.listApiKeys();
           return NextResponse.json(keys);
         }
+
+        if (req.method === 'DELETE' && id) {
+          await paygrid.deleteApiKey(id);
+          return NextResponse.json({ success: true });
+        }
       }
 
       return NextResponse.json({ error: 'Method Not Allowed' }, { status: 405 });

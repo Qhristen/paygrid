@@ -22,3 +22,9 @@ export async function POST(req: Request) {
   const handler = createApiHandler(paygrid);
   return handler(req as any);
 }
+
+export async function DELETE(req: Request) {
+  const paygrid = await getPayGrid();
+  const handler = createApiHandler(paygrid);
+  return handler(req as any);
+}
