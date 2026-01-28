@@ -1,3 +1,4 @@
+'use client';
 
 import React from 'react';
 import { PaymentIntent, PaymentStatus } from '../types';
@@ -20,7 +21,8 @@ const statusColors = {
 const PaymentsTable: React.FC<Props> = ({ intents, isFullPage }) => {
   return (
     <div className={`overflow-x-auto ${isFullPage ? 'bg-[#111] border border-white/10 rounded-2xl' : ''}`}>
-      <table className="w-full text-left text-sm">
+      {/* Desktop Table */}
+      <table className="hidden md:table w-full text-left text-sm min-w-[800px]">
         <thead className="border-b border-white/10 text-gray-400 font-medium">
           <tr>
             <th className="px-6 py-4">Status</th>
@@ -46,9 +48,9 @@ const PaymentsTable: React.FC<Props> = ({ intents, isFullPage }) => {
                 {intent.id}
               </td>
               <td className="px-6 py-4 text-gray-500 text-xs font-mono">
-                {intent?.walletAddress?.slice(0, 8)}...{intent?.walletAddress?.slice(-8)}
+                {intent?.walletAddress ? `${intent.walletAddress.slice(0, 8)}...${intent.walletAddress.slice(-8)}` : 'Main Treasury'}
               </td>
-              <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+              <td className="px-6 py-4 text-gray-500 whitespace-nowrap text-xs">
                 {new Date(intent.createdAt).toLocaleString()}
               </td>
               <td className="px-6 py-4 text-right">
@@ -67,6 +69,34 @@ const PaymentsTable: React.FC<Props> = ({ intents, isFullPage }) => {
           )}
         </tbody>
       </table>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden divide-y divide-white/5">
+        {intents?.map((intent) => (
+          <div key={intent.id} className="p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold border ${statusColors[intent.status]}`}>
+                {intent.status.replace('_', ' ')}
+              </span>
+              <p className="text-gray-500 text-[10px]">{new Date(intent.createdAt).toLocaleString()}</p>
+            </div>
+            <div className="flex justify-between items-end">
+              <div>
+                <h4 className="text-lg font-bold text-white">{intent.amount} {intent.tokenSymbol}</h4>
+                <p className="text-xs text-gray-500 font-mono mt-1">{intent.id.slice(0, 18)}...</p>
+              </div>
+              <button className="p-2 bg-white/5 rounded-lg text-gray-400">
+                <Icons.External />
+              </button>
+            </div>
+          </div>
+        ))}
+        {intents?.length === 0 && (
+          <div className="px-6 py-12 text-center text-gray-500">
+            No payment intents found.
+          </div>
+        )}
+      </div>
     </div>
   );
 };

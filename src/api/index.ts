@@ -60,7 +60,12 @@ export function createApiHandler(paygrid: PayGrid) {
 
       return NextResponse.json({ error: 'Method Not Allowed' }, { status: 405 });
     } catch (error: any) {
-      console.error('API Error:', error);
+      console.error('API Error Details:', {
+        message: error.message,
+        stack: error.stack,
+        resource,
+        method: req.method
+      });
       return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
   };

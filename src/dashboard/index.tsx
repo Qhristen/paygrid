@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import {
     CircleDollarSign,
@@ -7,6 +9,8 @@ import {
     ExternalLink,
     Search,
     Plus,
+    Menu,
+    X,
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -20,33 +24,47 @@ function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export function PayGridDashboard() {
+export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?: string; baseUrl?: string }) {
     const [activeTab, setActiveTab] = useState<'overview' | 'payments' | 'apikeys'>('overview');
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [intents, setIntents] = useState<PaymentIntent[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-      const fetchData = async () => {
+    const fetchData = async () => {
         setIsLoading(true);
-        const [stats, list] = await Promise.all([
-       ()=>{},
-       ()=>{},
-        ]);
-        setAnalytics(stats as any);
-        setIntents(list as any);
-        setIsLoading(false);
-      };
+        try {
+            const headers: Record<string, string> = {};
+            if (apiKey) headers['x-api-key'] = apiKey;
 
-      useEffect(() => {
+            const [statsRes, listRes] = await Promise.all([
+                fetch(`${baseUrl}/analytics`, { headers }),
+                fetch(`${baseUrl}/payments`, { headers }),
+            ]);
+
+            if (statsRes.ok && listRes.ok) {
+                const stats = await statsRes.json();
+                const list = await listRes.json();
+                setAnalytics(stats);
+                setIntents(list);
+            }
+        } catch (error) {
+            console.error('Failed to fetch dashboard data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
-      }, []);
+    }, [apiKey, baseUrl]);
 
     const renderContent = () => {
         switch (activeTab) {
             case 'overview':
                 return (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-6">
                             <div className="bg-[#111] border border-white/10 p-6 rounded-2xl">
                                 <p className="text-gray-400 text-sm font-medium">Total Volume</p>
                                 <h3 className="text-3xl font-bold mt-1 text-white">${analytics?.totalRevenue.toFixed(2)}</h3>
@@ -104,35 +122,54 @@ export function PayGridDashboard() {
             case 'payments':
                 return <PaymentsTable intents={intents} isFullPage />;
             case 'apikeys':
-                return <ApiKeysSection />;
+                return <ApiKeysSection apiKey={apiKey} baseUrl={baseUrl} />;
         }
     };
 
     return (
         <div className="flex min-h-screen">
+            {/* Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 border-r border-white/10 flex flex-col fixed h-full bg-[#050505] z-20">
+            <aside className={cn(
+                "w-64 border-r border-white/10 flex flex-col fixed h-full bg-[#050505] z-40 transition-transform duration-300 ease-in-out",
+                isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            )}>
                 <div className="p-6">
-                    <div className="flex items-center gap-2 mb-8">
-                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg">P</div>
-                        <span className="font-bold text-xl tracking-tight">PayGrid</span>
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg">P</div>
+                            <span className="font-bold text-xl tracking-tight">PayGrid</span>
+                        </div>
+                        <button
+                            className="lg:hidden text-gray-400 hover:text-white"
+                            onClick={() => setIsSidebarOpen(false)}
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
 
                     <nav className="space-y-1">
                         <button
-                            onClick={() => setActiveTab('overview')}
+                            onClick={() => { setActiveTab('overview'); setIsSidebarOpen(false); }}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
                             <Icons.Dashboard /> Overview
                         </button>
                         <button
-                            onClick={() => setActiveTab('payments')}
+                            onClick={() => { setActiveTab('payments'); setIsSidebarOpen(false); }}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'payments' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
                             <Icons.Payments /> Payments
                         </button>
                         <button
-                            onClick={() => setActiveTab('apikeys')}
+                            onClick={() => { setActiveTab('apikeys'); setIsSidebarOpen(false); }}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activeTab === 'apikeys' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
                             <Icons.Key /> API Keys
@@ -152,18 +189,26 @@ export function PayGridDashboard() {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 ml-64 p-8">
-                <header className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-2xl font-bold capitalize">{activeTab}</h1>
-                        <p className="text-gray-500 text-sm">Manage your Solana payments infrastructure</p>
+            <main className="flex-1 lg:ml-64 p-4 md:p-8 pt-20 lg:pt-8 w-full bg-[#050505] overflow-hidden">
+                <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+                    <div className="flex items-center gap-4">
+                        <button
+                            className="lg:hidden p-2 bg-[#111] border border-white/10 rounded-lg text-gray-400"
+                            onClick={() => setIsSidebarOpen(true)}
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <div>
+                            <h1 className="text-xl md:text-2xl font-bold capitalize">{activeTab}</h1>
+                            <p className="text-gray-500 text-xs md:text-sm">Manage your Solana payments infrastructure</p>
+                        </div>
                     </div>
-                    <div className="flex gap-3">
-                        <div className="relative">
+                    <div className="flex gap-3 w-full md:w-auto">
+                        <div className="relative w-full md:w-auto">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
                                 <Icons.Search />
                             </div>
-                            <input type="text" placeholder="Search intents..." className="bg-[#111] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
+                            <input type="text" placeholder="Search intents..." className="w-full bg-[#111] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
                         </div>
                     </div>
                 </header>

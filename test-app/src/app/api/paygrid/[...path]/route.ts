@@ -11,6 +11,7 @@ async function getPayGrid() {
 }
 
 export async function GET(req: Request) {
+  console.log('GET Request to PayGrid API:', req.url);
   const paygrid = await getPayGrid();
   const handler = createApiHandler(paygrid);
   return handler(req as any);

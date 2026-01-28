@@ -2,7 +2,7 @@ import { PayGridDB } from '../db';
 import { SolanaService } from '../blockchain';
 import { AuthService } from '../auth';
 import { validateConfig, CONSTANTS } from '../config';
-import { PaymentIntent, PayGridConfig, PaymentStatus, PaymentMethod } from '../types';
+import { PaymentIntent, PayGridConfig, PaymentStatus, PaymentMethod, AnalyticsData } from '../types';
 import crypto from 'crypto';
 
 export class PayGrid {
@@ -130,16 +130,26 @@ export class PayGrid {
     return await this.db.getAllPayments();
   }
 
-  async getAnalytics() {
+  async getAnalytics(): Promise<AnalyticsData> {
     const payments = await this.db.getAllPayments();
     const settled = payments.filter(p => p.status === 'settled');
     const totalRevenue = settled.reduce((sum, p) => sum + p.amount, 0);
     
+    // Group by date for history (last 7 days by default if we want, but here we just take all for now)
+    const historyMap = new Map<string, number>();
+    settled.forEach(p => {
+      const date = new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      historyMap.set(date, (historyMap.get(date) || 0) + p.amount);
+    });
+
+    const history = Array.from(historyMap.entries())
+      .map(([date, amount]) => ({ date, amount }));
+
     return {
       totalRevenue,
-      paymentCount: payments.length,
-      settledCount: settled.length,
-      successRate: payments.length > 0 ? (settled.length / payments.length) * 100 : 0
+      transactionCount: payments.length,
+      settlementRate: payments.length > 0 ? (settled.length / payments.length) * 100 : 0,
+      history: history.length > 0 ? history : [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), amount: 0 }]
     };
   }
 }
