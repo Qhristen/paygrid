@@ -11,7 +11,7 @@ async function testDrive() {
   // Set mock environment variables
   process.env.SOLANA_RPC_URL = 'https://api.devnet.solana.com';
   process.env.TREASURY_PRIVATE_KEY = bs58.encode(testKeypair.secretKey);
-  process.env.API_SECRET = 'super_secret_test_key_at_least_32_chars_long';
+  process.env.NEXT_PUBLIC_PAYGRID_API_SECRET = 'super_secret_test_key_at_least_32_chars_long';
   process.env.NETWORK = 'devnet';
   process.env.DB_PATH = './paygrid.db';
 

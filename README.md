@@ -33,7 +33,8 @@ Create a `.env` file in your Next.js project:
 ```bash
 SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
 TREASURY_PRIVATE_KEY=YourBase58PrivateKey...
-API_SECRET=at_least_32_character_random_string
+NEXT_PUBLIC_PAYGRID_API_SECRET=at_least_32_character_random_string_for_paygrid_test
+=at_least_32_character_random_string
 DB_PATH=./paygrid.db # Default
 NETWORK=mainnet-beta # Or devnet
 ```

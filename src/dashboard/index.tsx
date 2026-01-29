@@ -1,30 +1,27 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-    CircleDollarSign,
-    History,
-    Key,
-    TrendingUp,
-    ExternalLink,
-    Search,
-    Plus,
-    Menu,
-    X,
-} from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import { Icons } from './constant';
+import {
+    LogOut,
+    Menu,
+    X
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { twMerge } from 'tailwind-merge';
+import { logout } from '../auth/actions';
 import { AnalyticsData, PaymentIntent } from '../types';
-import PaymentsTable from './payment-table';
 import ApiKeysSection from './api-section';
+import { Icons } from './constant';
+import PaymentsTable from './payment-table';
+import {LoginScreen} from '../auth/login-screen';
+
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?: string; baseUrl?: string }) {
+export function PayGridDashboard({ baseUrl = '/api/paygrid' }: { baseUrl?: string; }) {
     const [activeTab, setActiveTab] = useState<'overview' | 'payments' | 'apikeys'>('overview');
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [intents, setIntents] = useState<PaymentIntent[]>([]);
@@ -33,6 +30,9 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [timeframe, setTimeframe] = useState<7 | 30>(30);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+    const apiKey = process.env.NEXT_PUBLIC_PAYGRID_API_SECRET;
 
     const fetchAnalytics = async (showLoading = false) => {
         if (showLoading) setIsAnalyticsLoading(true);
@@ -74,6 +74,9 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
     // Analytics load (including timeframe changes)
     useEffect(() => {
         fetchAnalytics(true);
+        // Check admin session cookie on client side
+        const hasSession = document.cookie.includes('paygrid_admin_session=true');
+        setIsAdmin(hasSession);
     }, [apiKey, baseUrl, timeframe]);
 
     const filteredIntents = intents.filter(intent => {
@@ -195,6 +198,15 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
         }
     };
 
+
+
+
+    if (isAdmin === null) {
+        return null; // or loading spinner
+    }
+    if (!isAdmin) {
+        return <LoginScreen />;
+    }
     return (
         <div className="flex min-h-screen">
             {/* Sidebar Overlay */}
@@ -254,6 +266,14 @@ export function PayGridDashboard({ apiKey, baseUrl = '/api/paygrid' }: { apiKey?
                             <span className="text-xs text-gray-500">Live Mode</span>
                         </div>
                     </div>
+                    {(
+                        <button
+                            onClick={logout}
+                            className="w-full cursor-pointer flex items-center gap-2 mt-4 px-2 py-2 text-red-400 hover:text-red-300 hover:bg-white/5 rounded-lg transition-all text-sm font-medium"
+                        >
+                            <LogOut size={16} /> Sign Out
+                        </button>
+                    )}
                 </div>
             </aside>
 
