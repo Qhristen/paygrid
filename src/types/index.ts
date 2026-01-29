@@ -9,7 +9,13 @@ export enum PaymentStatus {
 
 export enum PaymentMethod {
   WALLET_SIGNING = 'wallet_signing',
-  MANUAL_TRANSFER = 'manual_transfer'
+  MANUAL_TRANSFER = 'manual_transfer',
+}
+
+export enum TokenSymbol {
+  SOL = 'SOL',
+  USDC = 'USDC',
+  USDT = 'USDT'
 }
 
 export interface PaymentIntent {
@@ -33,6 +39,8 @@ export interface PayGridConfig {
   treasuryPrivateKey: string;
   dbPath: string;
   apiSecret: string;
+  adminEmail: string;
+  adminPassword: string;
   network: 'mainnet-beta' | 'devnet' | 'testnet';
 }
 
