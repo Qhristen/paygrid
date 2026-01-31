@@ -1,75 +1,114 @@
-import { Connection, PublicKey } from '@solana/web3.js';
-import { PrivacyCash } from 'privacycash';
-
-
-export const TOKENS = {
-  USDC: new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
-  USDT: new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'),
-};
+import { PayGridConfig, TokenSymbol as Symbol } from "../types";
+import {
+  DepositResponse,
+  ShadowWireClient,
+  TokenSymbol,
+  TransferResponse,
+} from "@radr/shadowwire";
 
 export class PrivacyWrapper {
-  private client: PrivacyCash;
-  private connection: Connection;
+  private client: ShadowWireClient;
   private rpcUrl: string;
-  private privateKey: string;
+  private config: PayGridConfig;
 
-  constructor(rpcUrl: string, privateKey: string) {
-    this.rpcUrl = rpcUrl;
-    this.privateKey = privateKey;
-    this.connection = new Connection(rpcUrl, 'confirmed');
-    
-    this.client = new PrivacyCash({
-        RPC_url: rpcUrl,
-        owner: privateKey
+  constructor(config: PayGridConfig) {
+    this.config = config;
+    this.rpcUrl = this.config.rpcUrl;
+    this.client = new ShadowWireClient({
+      network: "mainnet-beta",
+      // apiBaseUrl: this.config.rpcUrl
+      debug: false,
     });
   }
 
-
-  async getPrivateBalance() {
-    return await this.client.getPrivateBalance();
+  async getPrivateBalance(walletAddress: string, symbol: TokenSymbol) {
+    return await this.client.getBalance(walletAddress, symbol);
   }
 
-  async getPrivateBalanceSpl(mint: PublicKey | string) {
-    return await this.client.getPrivateBalanceSpl(typeof mint === 'string' ? mint : mint.toBase58());
-  }
+  async withdraw({ symbol, recipient }: { symbol: string; recipient: string }) {
+    const balance = await this.client.getBalance(
+      recipient,
+      symbol as TokenSymbol,
+    );
 
-  async withdraw({ lamports, recipient }: { lamports: number; recipient: string }) {
-    // PrivacyCash withdraw takes lamports as amount
+    if (balance.available === 0) {
+      console.log("No funds available");
+      return;
+    }
+
+    const amount =
+      symbol === Symbol.SOL
+        ? (balance?.available ?? 0) / 1e9
+        : (balance?.available ?? 0) / 1e6;
+
     return await this.client.withdraw({
-        lamports,
-        recipientAddress: recipient
+      amount,
+      wallet: recipient,
     });
   }
 
-  async withdrawSPL({ amount, mint, recipient }: { amount: number; mint: PublicKey | string; recipient: string }) {
-      return await this.client.withdrawSPL({
-          base_units: amount,
-          recipientAddress: recipient,
-          mintAddress: typeof mint === 'string' ? mint : mint.toBase58()
-      });
+  async transfer({
+    symbol,
+    sender,
+    amount,
+  }: {
+    symbol: string;
+    sender: string;
+    amount: number;
+  }) {
+    return await this.client.transfer({
+      amount,
+      recipient: this.config.marchantWalletADdress,
+      sender,
+      token: symbol as TokenSymbol,
+      type: "internal",
+    });
+  }
+
+  async createTransferTransaction(params: {
+    amount: number;
+    walletAddress: string;
+    symbol: TokenSymbol;
+  }): Promise<TransferResponse> {
+    const result = await this.client.transfer({
+      sender: params.walletAddress,
+      recipient: this.config.marchantWalletADdress,
+      amount: params.amount,
+      token: params.symbol,
+      type: "external",
+    });
+
+    return result;
   }
 
   async createDepositTransaction(params: {
     amount: number;
-    tokenMint?: string;
-    tokenSymbol?: string;
-  }): Promise<{ transaction: string; msg: string }> {
-
+    walletAddress: string;
+    tokenMint: string;
+    symbol: string;
+  }): Promise<DepositResponse> {
     try {
-        if (params.tokenSymbol && params.tokenSymbol !== 'SOL') {
-            await this.client.depositSPL({
-                amount: params.amount,
-                mintAddress: params.tokenMint ?? ""
-            });
-        } else {
-            await this.client.deposit({
-                lamports: params.amount * 1_000_000_000
-            });
-        }
+      let response: DepositResponse;
+
+      console.log(params, "params");
+      if (params.symbol === "SOL") {
+        response = await this.client.deposit({
+          wallet: params.walletAddress,
+          amount: params.amount * 1000000000,
+        });
+      } else {
+        response = await this.client.deposit({
+          wallet: params.walletAddress,
+          amount: params.amount * 1000000,
+          token_mint: params.tokenMint,
+        });
+      }
+
+      return response;
     } catch (e: any) {
-        throw e;
+      throw new Error(
+        `Failed to create privacy transaction: ${e?.message ?? String(e)}`,
+      );
     }
-    
-    throw new Error("Failed to capture transaction");
   }
 }

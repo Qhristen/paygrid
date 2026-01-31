@@ -1,3 +1,5 @@
+import { DepositResponse, TransferResponse, WithdrawResponse } from "@radr/shadowwire";
+
 export enum PaymentStatus {
   CREATED = 'created',
   AWAITING_PAYMENT = 'awaiting_payment',
@@ -15,7 +17,7 @@ export enum PaymentMethod {
 export enum TokenSymbol {
   SOL = 'SOL',
   USDC = 'USDC',
-  USDT = 'USDT'
+  BONK = 'BONK'
 }
 
 export interface PaymentIntent {
@@ -36,7 +38,7 @@ export interface PaymentIntent {
 
 export interface PayGridConfig {
   rpcUrl: string;
-  treasuryPrivateKey: string;
+  marchantWalletADdress: string;
   dbPath: string;
   apiSecret: string;
   adminEmail: string;
@@ -60,3 +62,9 @@ export interface ApiKey {
   name: string;
   createdAt: number;
 }
+
+export type PayGridResponseType = PaymentIntent & { depositResponse: DepositResponse }
+export type PayGridWithdrawalResponseType = WithdrawResponse
+export type PayGridTransferResponseType = TransferResponse
+
+

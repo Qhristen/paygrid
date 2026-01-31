@@ -3,7 +3,7 @@ import { PayGridConfig } from '../types';
 
 export const configSchema = z.object({
   SOLANA_RPC_URL: z.string().url(),
-  TREASURY_PRIVATE_KEY: z.string().min(44), // Base58 encoded private key
+  MERCHANT_WALLET_ADDRESS: z.string().min(44), // Base58 encoded private key
   DB_PATH: z.string().default('./paygrid.db'),
   NEXT_PUBLIC_PAYGRID_API_SECRET: z.string().min(32),
   ADMIN_EMAIL: z.string().email(),
@@ -13,11 +13,11 @@ export const configSchema = z.object({
 
 export function validateConfig(): PayGridConfig {
   const result = configSchema.safeParse({
-    SOLANA_RPC_URL: process.env.SOLANA_RPC_URL!,
-    TREASURY_PRIVATE_KEY: process.env.TREASURY_PRIVATE_KEY!,
+    SOLANA_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_RPC_URL!,
+    MERCHANT_WALLET_ADDRESS: process.env.NEXT_PUBLIC_MERCHANT_WALLET_ADDRESS!,
     DB_PATH: process.env.DB_PATH!,
     NEXT_PUBLIC_PAYGRID_API_SECRET: process.env.NEXT_PUBLIC_PAYGRID_API_SECRET!,
-    NETWORK: process.env.NETWORK!,
+    NETWORK: process.env.NEXT_PUBLIC_NETWORK!,
     ADMIN_EMAIL: process.env.NEXT_PUBLIC_ADMIN_EMAIL!,
     ADMIN_PASSWORD: process.env.NEXT_PUBLIC_ADMIN_PASSWORD!,
   });
@@ -29,7 +29,7 @@ export function validateConfig(): PayGridConfig {
 
   return {
     rpcUrl: result.data.SOLANA_RPC_URL,
-    treasuryPrivateKey: result.data.TREASURY_PRIVATE_KEY,
+    marchantWalletADdress: result.data.MERCHANT_WALLET_ADDRESS,
     dbPath: result.data.DB_PATH,
     apiSecret: result.data.NEXT_PUBLIC_PAYGRID_API_SECRET,
     network: result.data.NETWORK,
@@ -48,5 +48,5 @@ export const CONSTANTS = {
 export const SUPPORTED_TOKENS = [
   { symbol: 'SOL', mint: '11111111111111111111111111111111', color: '#14F195' },
   { symbol: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', color: '#2775CA' },
-  { symbol: 'BONK', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixJ6WoPBw5DRF6S49t38', color: '#FFA500' }
+  { symbol: 'BONK', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', color: '#FFA500' }
 ];

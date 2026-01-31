@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import crypto from "crypto";
 import { AuthService } from "../auth";
 import { SolanaService } from "../blockchain";
-import { CONSTANTS, validateConfig } from "../config";
+import { CONSTANTS, SUPPORTED_TOKENS, validateConfig } from "../config";
 import { PayGridDB } from "../db";
 import {
   AnalyticsData,
@@ -12,7 +12,8 @@ import {
   PaymentStatus,
   TokenSymbol,
 } from "../types";
-import { PrivacyWrapper, TOKENS } from "./privacy-wrapper";
+import { PrivacyWrapper } from "./privacy-wrapper";
+import { DepositResponse } from "@radr/shadowwire";
 
 export class PayGrid {
   private db: PayGridDB;
@@ -25,16 +26,10 @@ export class PayGrid {
   constructor(config: PayGridConfig) {
     this.config = config;
     this.db = new PayGridDB(this.config.dbPath);
-    this.solana = new SolanaService(
-      this.config.rpcUrl,
-      this.config.treasuryPrivateKey,
-    );
+    this.solana = new SolanaService(this.config.rpcUrl);
 
     // Initialize Privacy Wrapper
-    this.privacy = new PrivacyWrapper(
-      this.config.rpcUrl,
-      this.config.treasuryPrivateKey,
-    );
+    this.privacy = new PrivacyWrapper(this.config);
 
     this.auth = new AuthService(this.config.apiSecret);
   }
@@ -104,54 +99,58 @@ export class PayGrid {
     method: "wallet-signing" | "manual-transfer";
     sender?: string;
     metadata?: Record<string, any>;
-  }): Promise<PaymentIntent & { privacyTransaction?: string }> {
+  }): Promise<PaymentIntent & { depositResponse: DepositResponse }> {
     try {
       const id = crypto.randomUUID();
-      let walletAddress: string | undefined;
-
       // Resolve token mint if symbol is provided
       let mintAddress;
       let symbol = params.tokenSymbol;
 
       if (params.tokenSymbol === TokenSymbol.SOL) {
-        mintAddress = TOKENS.USDC;
+        mintAddress = SUPPORTED_TOKENS.find(
+          (t) => t.symbol === TokenSymbol.SOL,
+        )?.mint;
       } else if (params.tokenSymbol === TokenSymbol.USDC) {
-        mintAddress = TOKENS.USDC;
-      } else if (params.tokenSymbol === TokenSymbol.USDT) {
-        mintAddress = TOKENS.USDT;
+        mintAddress = SUPPORTED_TOKENS.find(
+          (t) => t.symbol === TokenSymbol.USDC,
+        )?.mint;
+      } else if (params.tokenSymbol === TokenSymbol.BONK) {
+        mintAddress = SUPPORTED_TOKENS.find(
+          (t) => t.symbol === TokenSymbol.BONK,
+        )?.mint;
       }
 
-      if (params.method === "manual-transfer") {
-        const { publicKey } = await this.solana.generateTemporaryWallet();
-        walletAddress = publicKey;
-      }
+      let response: DepositResponse | undefined;
 
-      let privacyTransaction: string | undefined;
       if (params.method === "wallet-signing") {
-       
         try {
           const result = await this.privacy.createDepositTransaction({
             amount: params.amount,
-            tokenMint: mintAddress?.toString(),
-            tokenSymbol: params.tokenSymbol,
-            // userPublicKey: new PublicKey(params.sender),
+            tokenMint: mintAddress ?? "",
+            symbol: params.tokenSymbol,
+            walletAddress: params.sender ?? "",
           });
-          privacyTransaction = result.transaction;
+          response = result;
         } catch (e: any) {
           console.error("Failed to create privacy transaction", e);
           throw new Error("Failed to create privacy transaction: " + e.message);
         }
       }
 
+      const amount =
+        symbol === TokenSymbol.SOL
+          ? (response?.amount ?? 0) / 1e9
+          : (response?.amount ?? 0) / 1e6;
+
       const payment: PaymentIntent = {
         id,
-        amount: params.amount,
+        amount: params.method === "wallet-signing" ? amount : params.amount,
         tokenMint: mintAddress?.toString() ?? "",
         tokenSymbol: symbol,
-        method: params.method as any,
+        method: params.method as PaymentMethod,
         status: PaymentStatus.AWAITING_PAYMENT,
-        walletAddress,
-        destination: this.solana.getTreasuryPublicKey(),
+        walletAddress: this.config.marchantWalletADdress,
+        destination: this.config.marchantWalletADdress,
         sender: params.sender,
         expiresAt: Date.now() + CONSTANTS.PAYMENT_EXPIRY_MS,
         createdAt: Date.now(),
@@ -160,10 +159,7 @@ export class PayGrid {
 
       await this.db.createPayment(payment);
 
-      if (privacyTransaction) {
-        return { ...payment, privacyTransaction };
-      }
-      return payment;
+      return { ...payment, depositResponse: response! };
     } catch (error) {
       console.error("Error creating payment intent:", error);
       throw error;
@@ -277,29 +273,33 @@ export class PayGrid {
   // Withdraw funds from the privacy pool to a recipient
   async withdrawFromPrivacy(params: {
     tokenSymbol: TokenSymbol;
-    amount: number;
     recipient: string;
   }) {
     try {
-      if (params.tokenSymbol === TokenSymbol.SOL) {
-        // Privacy wrapper expects lamports for SOL
-        const lamports = Math.round(params.amount * 1_000_000_000);
-        const res = await this.privacy.withdraw({
-          lamports,
-          recipient: params.recipient,
-        });
-        return res;
-      } else {
-        // For SPL tokens, resolve mint from TOKENS
-        const mint = (TOKENS as any)[params.tokenSymbol];
-        if (!mint) throw new Error("Unsupported token for privacy withdrawal");
-        const res = await this.privacy.withdrawSPL({
-          amount: params.amount,
-          mint,
-          recipient: params.recipient,
-        });
-        return res;
-      }
+      const res = await this.privacy.withdraw({
+        recipient: params.recipient,
+        symbol: params.tokenSymbol,
+      });
+
+      console.log(res, "withdrawal response")
+      return res
+    } catch (error) {
+      console.error("Error withdrawing from privacy:", error);
+      throw error;
+    }
+  }
+
+  async transferFromPrivacy(params: {
+    tokenSymbol: TokenSymbol;
+    sender: string;
+    amount: number;
+  }) {
+    try {
+      const res = await this.privacy.transfer({
+        symbol: params.tokenSymbol,
+        amount: params.amount,
+        sender: params.sender
+      });
     } catch (error) {
       console.error("Error withdrawing from privacy:", error);
       throw error;

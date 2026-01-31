@@ -1,7 +1,16 @@
 "use client";
 
-import { CheckoutModal } from "@paygrid/core/dist/index";
-import Image from "next/image";
+import { WalletButton } from "@/components/wallet-button";
+import { signSolanaTransaction } from "@/utils/sign-transaction";
+import {
+  CheckoutModal,
+  PayGridResponseType,
+  PayGridWithdrawalResponseType,
+  PayGridTransferResponseType,
+} from "@paygrid/core/dist/client";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Connection } from "@solana/web3.js";
+import { useState } from "react";
 
 export const SAMPLE_PRODUCTS = [
   {
@@ -9,7 +18,7 @@ export const SAMPLE_PRODUCTS = [
     name: "Neon Glitch NFT #042",
     description:
       "Exclusive generative digital art piece from the Flow Genesis collection.",
-    price: 0.002,
+    price: 0.1,
     tokenSymbol: "SOL",
     image:
       "https://images.unsplash.com/photo-1634973357973-f2ed2657db3c?q=80&w=800&auto=format&fit=crop",
@@ -20,7 +29,7 @@ export const SAMPLE_PRODUCTS = [
     name: "Flow Dev License (1 Year)",
     description:
       "Full access to the PayGrid infrastructure and priority support.",
-    price: 1,
+    price: 5,
     tokenSymbol: "USDC",
     image:
       "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800&auto=format&fit=crop",
@@ -29,9 +38,10 @@ export const SAMPLE_PRODUCTS = [
   {
     id: "prod_3",
     name: "Genesis Stealth Cap",
-    description: "Premium heavyweight cotton cap with embroidered PayGrid logo.",
-    price: 0.2,
-    tokenSymbol: "USDT",
+    description:
+      "Premium heavyweight cotton cap with embroidered PayGrid logo.",
+    price: 5,
+    tokenSymbol: "BONK",
     image:
       "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?q=80&w=800&auto=format&fit=crop",
     category: "merch",
@@ -39,6 +49,103 @@ export const SAMPLE_PRODUCTS = [
 ];
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+  const { signTransaction, publicKey, connected } = useWallet();
+  const connection = new Connection(
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "",
+    "confirmed",
+  );
+
+  const apiKey = process.env.NEXT_PUBLIC_PAYGRID_API_SECRET;
+
+  const handleCheckout = async (paygridResponse: PayGridResponseType) => {
+    if (!publicKey || !signTransaction || !connected) {
+      throw new Error("Wallet not connected");
+    }
+
+    console.log(publicKey, "wallet address");
+
+    console.log(paygridResponse, "paygrid response");
+    try {
+      await signSolanaTransaction(
+        paygridResponse.depositResponse.unsigned_tx_base64,
+        connection,
+        signTransaction,
+      );
+
+      const headers: Record<string, string> = {};
+      if (apiKey) headers["x-api-key"] = apiKey;
+
+      const response = await fetch("/api/paygrid/privacy-transfer", {
+        method: "POST",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tokenSymbol: paygridResponse.tokenSymbol,
+          amount: paygridResponse.amount,
+          sender: publicKey,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Payment intent creation failed: ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as PayGridTransferResponseType;
+
+      // await signSolanaTransaction(
+      //   data.tx_signature,
+      //   connection,
+      //   signTransaction,
+      // );
+
+    } catch (error) {
+      console.error("Error signing/sending transaction:", error);
+      throw error;
+    }
+  };
+
+  const handleWithdrawal = async () => {
+    setLoading(true);
+    try {
+      const headers: Record<string, string> = {};
+      if (apiKey) headers["x-api-key"] = apiKey;
+
+      const response = await fetch("/api/paygrid/privacy-withdraw", {
+        method: "POST",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tokenSymbol: "USDC",
+          recipient: publicKey,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Payment intent creation failed: ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as PayGridWithdrawalResponseType;
+
+      await signSolanaTransaction(
+        data.unsigned_tx_base64 as string,
+        connection,
+        signTransaction,
+      );
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="pt-16 pb-32 px-6 max-w-7xl mx-auto">
       <div className="text-center mb-16 space-y-4">
@@ -56,8 +163,16 @@ export default function Home() {
           sample product below to trigger the embeddable checkout widget.
         </p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="flex items-center justify-between">
+        <WalletButton />
+        <button
+          onClick={handleWithdrawal}
+          className="bg-white/5 hover:bg-white/10 cursor-pointer border border-white/10 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all"
+        >
+         {loading ? "Processing...": " Withdraw"}
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 mt-4 lg:grid-cols-3 gap-8">
         {SAMPLE_PRODUCTS.map((product) => (
           <div
             key={product.id}
@@ -90,7 +205,13 @@ export default function Home() {
               <p className="text-gray-400 text-sm leading-relaxed mb-6 flex-1">
                 {product.description}
               </p>
-              <CheckoutModal />
+              <CheckoutModal
+                amount={product.price}
+                method="wallet-signing"
+                sender={publicKey?.toBase58().toString() as string}
+                tokenSymbol={product.tokenSymbol}
+                onPaymentResponse={(res) => handleCheckout(res)}
+              />
             </div>
           </div>
         ))}

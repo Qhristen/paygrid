@@ -1,36 +1,121 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SUPPORTED_TOKENS } from "../config/client";
-import { PaymentIntent, PaymentMethod } from "../types";
+import { SUPPORTED_TOKENS } from "../config";
+import { PayGridResponseType, PaymentIntent, PaymentMethod } from "../types";
+import { initWASM, isWASMSupported, ShadowWireClient, TokenSymbol } from "@radr/shadowwire";
 
-export function CheckoutModal() {
+export interface CheckoutModalProps {
+  amount: number;
+  method: "wallet-signing" | "manual-transfer";
+  tokenSymbol: string;
+  sender: string;
+  onPaymentResponse?: (response: PayGridResponseType) => void;
+}
+
+export function CheckoutModal({
+  amount: propsAmount,
+  method: propsMethod,
+  tokenSymbol: propsTokenSymbol,
+  sender: propsSender,
+  onPaymentResponse,
+}: CheckoutModalProps) {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [step, setStep] = useState<"config" | "paying" | "success">("config");
-  const [selectedToken, setSelectedToken] = useState(
-    SUPPORTED_TOKENS[0].symbol,
-  );
-
+  const [selectedToken, setSelectedToken] = useState(propsTokenSymbol);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(
-    PaymentMethod.WALLET_SIGNING,
+    propsMethod === "manual-transfer"
+      ? PaymentMethod.MANUAL_TRANSFER
+      : PaymentMethod.WALLET_SIGNING,
   );
-  const [amount, setAmount] = useState(0.1);
-  const [activeIntent, setActiveIntent] = useState<PaymentIntent | null>(null);
 
-  const handleStartPayment = async () => {
-    // const intent = await ttflow.createPaymentIntent(amount, selectedToken, selectedMethod);
-    // setActiveIntent(intent);
-    // setStep('paying');
-    // Simulate the payment process
-    // await ttflow.simulateConfirmation(intent.id);
-  };
+    const [client] = useState(() => new ShadowWireClient());
+
+  const [amount, setAmount] = useState(propsAmount);
+  const [activeIntent, setActiveIntent] = useState<PaymentIntent | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const apiKey = process.env.NEXT_PUBLIC_PAYGRID_API_SECRET;
+
+  const [wasmInitialized, setWasmInitialized] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
-    if (activeIntent && step === "paying") {
-      const interval = setInterval(async () => {}, 1000);
-      return () => clearInterval(interval);
+    async function init() {
+      if (!isWASMSupported()) {
+        setError('WebAssembly not supported');
+        return;
+      }
+
+      try {
+        await initWASM('/wasm/settler_wasm_bg.wasm');
+        setWasmInitialized(true);
+        await loadBalance();
+      } catch (err: any) {
+        setError('Initialization failed: ' + err.message);
+      }
     }
-  }, [activeIntent, step]);
+
+    init();
+  }, []);
+
+  const loadBalance = async () => {
+    try {
+      const data = await client.getBalance(propsSender, selectedToken as TokenSymbol);
+      setBalance(data.available / 1e9);
+    } catch (err: any) {
+      console.error('Balance load failed:', err);
+    }
+  };
+
+  const handleStartPayment = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const headers: Record<string, string> = {};
+      if (apiKey) headers["x-api-key"] = apiKey;
+
+      const response = await fetch("/api/paygrid/payment-intents", {
+        method: "POST",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount,
+          method: propsMethod,
+          tokenSymbol: selectedToken,
+          sender: propsSender,
+        }),
+      });
+      // setStep("paying");
+      if (!response.ok) {
+        throw new Error(
+          `Payment intent creation failed: ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as PayGridResponseType;
+
+      if (onPaymentResponse) {
+        onPaymentResponse(data);
+      }
+
+      setActiveIntent(data);
+      setStep("paying");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      setError(errorMessage);
+      console.error("Payment error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
 
   return (
     <div>
@@ -131,7 +216,7 @@ export function CheckoutModal() {
                   </div>
 
                   <div className="pt-4 border-t border-white/10">
-                    <div className="flex justify-between items-end mb-4">
+                    {/* <div className="flex justify-between items-end mb-4">
                       <span className="text-gray-400 text-sm">Total Due</span>
                       <div className="text-right">
                         <span className="text-2xl font-bold">
@@ -139,12 +224,18 @@ export function CheckoutModal() {
                         </span>
                         <p className="text-xs text-gray-500">~$12.50 USD</p>
                       </div>
-                    </div>
+                    </div> */}
+                    {error && (
+                      <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg mb-4">
+                        <p className="text-xs text-red-400">{error}</p>
+                      </div>
+                    )}
                     <button
                       onClick={handleStartPayment}
-                      className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:bg-gray-200 transition-colors"
+                      disabled={isLoading}
+                      className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Confirm & Pay
+                      {isLoading ? "Processing..." : "Confirm & Pay"}
                     </button>
                   </div>
                 </div>
@@ -193,7 +284,7 @@ export function CheckoutModal() {
                     Your transaction has been confirmed on the blockchain.
                   </p>
 
-                  <div className="space-y-3 text-left">
+                  {/* <div className="space-y-3 text-left">
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">
                         Transaction Hash
@@ -202,7 +293,7 @@ export function CheckoutModal() {
                         {activeIntent?.transactionSignature}
                       </p>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               )}
             </div>

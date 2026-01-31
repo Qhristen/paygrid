@@ -70,12 +70,12 @@ export function createApiHandler(paygrid: PayGrid) {
       if (resource === "privacy-withdraw") {
         if (req.method === "POST") {
           const body = await req.json();
-          const { tokenSymbol, amount, recipient } = body as {
+          const { tokenSymbol, recipient } = body as {
             tokenSymbol: string;
             amount: number;
             recipient: string;
           };
-          if (!tokenSymbol || !amount || !recipient) {
+          if (!tokenSymbol || !recipient) {
             return NextResponse.json(
               { error: "Missing parameters" },
               { status: 400 },
@@ -84,8 +84,34 @@ export function createApiHandler(paygrid: PayGrid) {
 
           const result = await paygrid.withdrawFromPrivacy({
             tokenSymbol: tokenSymbol as TokenSymbol,
-            amount,
             recipient,
+          });
+          return NextResponse.json(result);
+        }
+      }
+
+      
+      if (resource === "privacy-transfer") {
+        if (req.method === "POST") {
+          const body = await req.json();
+          const { tokenSymbol, amount, sender } = body as {
+            tokenSymbol: string;
+            amount: number;
+            recipient: string;
+            sender: string;
+          };
+
+          if (!tokenSymbol) {
+            return NextResponse.json(
+              { error: "Missing parameters" },
+              { status: 400 },
+            );
+          }
+
+          const result = await paygrid.transferFromPrivacy({
+            tokenSymbol: tokenSymbol as TokenSymbol,
+            amount,
+            sender,
           });
           return NextResponse.json(result);
         }
