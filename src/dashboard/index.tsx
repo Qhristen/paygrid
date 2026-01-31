@@ -21,6 +21,9 @@ import ApiKeysSection from "./api-section";
 import { Icons } from "./constant";
 import PaymentsTable from "./payment-table";
 
+// @ts-ignore
+import  '../index.css'
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

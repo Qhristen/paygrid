@@ -40,6 +40,12 @@ export class PayGrid {
   async startWatcher() {
     console.log("🚀 PayGrid Watcher started");
     // Run immediately once
+
+    const apiKeys = await this.listApiKeys();
+    if (apiKeys.length === 0) {
+      await this.createApiKey("default");
+    }
+
     await this.checkPendingPayments();
 
     this.watcherInterval = setInterval(async () => {

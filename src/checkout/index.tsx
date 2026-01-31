@@ -9,6 +9,8 @@ import {
 import { useEffect, useState } from "react";
 import { SUPPORTED_TOKENS } from "../config";
 import { PayGridResponseType, PaymentIntent, PaymentMethod } from "../types";
+// @ts-ignore
+import  '../index.css'
 
 export interface CheckoutModalProps {
   amount: number;

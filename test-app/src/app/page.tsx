@@ -63,16 +63,13 @@ export default function Home() {
     if (!publicKey || !signTransaction || !connected) {
       throw new Error("Wallet not connected");
     }
-
-    console.log(publicKey, "wallet address");
-
-    console.log(paygridResponse, "paygrid response");
     try {
       await signSolanaTransaction(
         paygridResponse.depositResponse.unsigned_tx_base64,
         connection,
         signTransaction,
       );
+
       const wrapper = await initWrapper();
 
       const res = await wrapper.transfer({
@@ -82,11 +79,7 @@ export default function Home() {
       });
 
       console.log(res, "transfer response");
-      // await signSolanaTransaction(
-      //   data.tx_signature,
-      //   connection,
-      //   signTransaction,
-      // );
+
     } catch (error) {
       console.error("Error signing/sending transaction:", error);
       throw error;
