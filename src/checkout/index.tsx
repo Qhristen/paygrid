@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { SUPPORTED_TOKENS } from "../config";
 import { PayGridResponseType, PaymentIntent, PaymentMethod } from "../types";
-import { initWASM, isWASMSupported, ShadowWireClient, TokenSymbol } from "@radr/shadowwire";
+import {
+  initWASM,
+  isWASMSupported,
+  ShadowWireClient,
+  TokenSymbol,
+} from "@radr/shadowwire";
 
 export interface CheckoutModalProps {
   amount: number;
@@ -29,7 +34,7 @@ export function CheckoutModal({
       : PaymentMethod.WALLET_SIGNING,
   );
 
-    const [client] = useState(() => new ShadowWireClient());
+  const [client] = useState(() => new ShadowWireClient());
 
   const [amount, setAmount] = useState(propsAmount);
   const [activeIntent, setActiveIntent] = useState<PaymentIntent | null>(null);
@@ -43,16 +48,16 @@ export function CheckoutModal({
   useEffect(() => {
     async function init() {
       if (!isWASMSupported()) {
-        setError('WebAssembly not supported');
+        setError("WebAssembly not supported");
         return;
       }
 
       try {
-        await initWASM('/wasm/settler_wasm_bg.wasm');
+        await initWASM("/wasm/settler_wasm_bg.wasm");
         setWasmInitialized(true);
         await loadBalance();
       } catch (err: any) {
-        setError('Initialization failed: ' + err.message);
+        setError("Initialization failed: " + err.message);
       }
     }
 
@@ -61,10 +66,13 @@ export function CheckoutModal({
 
   const loadBalance = async () => {
     try {
-      const data = await client.getBalance(propsSender, selectedToken as TokenSymbol);
+      const data = await client.getBalance(
+        propsSender,
+        selectedToken as TokenSymbol,
+      );
       setBalance(data.available / 1e9);
     } catch (err: any) {
-      console.error('Balance load failed:', err);
+      console.error("Balance load failed:", err);
     }
   };
 
@@ -114,9 +122,6 @@ export function CheckoutModal({
     }
   };
 
-
-
-
   return (
     <div>
       <button
@@ -160,6 +165,7 @@ export function CheckoutModal({
                       {SUPPORTED_TOKENS.map((token) => (
                         <button
                           key={token.symbol}
+                          disabled={token.disabled}
                           onClick={() => setSelectedToken(token.symbol)}
                           className={`p-3 rounded-xl  cursor-pointer border transition-all flex flex-col items-center gap-1 ${selectedToken === token.symbol ? "border-indigo-500 bg-indigo-500/10" : "border-white/5 bg-white/5 hover:border-white/20"}`}
                         >
@@ -200,6 +206,7 @@ export function CheckoutModal({
                         onClick={() =>
                           setSelectedMethod(PaymentMethod.MANUAL_TRANSFER)
                         }
+                        disabled
                         className={`w-full p-4  cursor-pointer rounded-xl border text-left flex items-center gap-3 transition-all ${selectedMethod === PaymentMethod.MANUAL_TRANSFER ? "border-indigo-500 bg-indigo-500/10" : "border-white/5 bg-white/5"}`}
                       >
                         <div className="p-2 bg-white/5 rounded-lg">📋</div>
@@ -216,15 +223,15 @@ export function CheckoutModal({
                   </div>
 
                   <div className="pt-4 border-t border-white/10">
-                    {/* <div className="flex justify-between items-end mb-4">
+                    <div className="flex justify-between items-end mb-4">
                       <span className="text-gray-400 text-sm">Total Due</span>
                       <div className="text-right">
                         <span className="text-2xl font-bold">
                           {amount} {selectedToken}
                         </span>
-                        <p className="text-xs text-gray-500">~$12.50 USD</p>
+                        <p className="text-xs text-gray-500">{`~${amount} ${selectedToken}`}</p>
                       </div>
-                    </div> */}
+                    </div>
                     {error && (
                       <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg mb-4">
                         <p className="text-xs text-red-400">{error}</p>

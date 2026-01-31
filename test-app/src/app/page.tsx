@@ -7,7 +7,7 @@ import {
   PayGridResponseType,
   PayGridWithdrawalResponseType,
   PayGridTransferResponseType,
-} from "@paygrid/core/dist/client";
+} from "@qhristen/paygrid";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection } from "@solana/web3.js";
 import { useState } from "react";
@@ -18,8 +18,8 @@ export const SAMPLE_PRODUCTS = [
     name: "Neon Glitch NFT #042",
     description:
       "Exclusive generative digital art piece from the Flow Genesis collection.",
-    price: 0.1,
-    tokenSymbol: "SOL",
+    price: 5,
+    tokenSymbol: "USDC",
     image:
       "https://images.unsplash.com/photo-1634973357973-f2ed2657db3c?q=80&w=800&auto=format&fit=crop",
     category: "digital",
@@ -41,7 +41,7 @@ export const SAMPLE_PRODUCTS = [
     description:
       "Premium heavyweight cotton cap with embroidered PayGrid logo.",
     price: 5,
-    tokenSymbol: "BONK",
+    tokenSymbol: "USDC",
     image:
       "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?q=80&w=800&auto=format&fit=crop",
     category: "merch",

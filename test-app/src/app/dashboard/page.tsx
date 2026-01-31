@@ -1,6 +1,6 @@
 'use client';
 
-import { PayGridDashboard } from '@paygrid/core/dist/index';
+import { PayGridDashboard } from '@qhristen/paygrid';
 
 
 export default function DashboardPage() {

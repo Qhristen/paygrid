@@ -1,4 +1,4 @@
-import { initPayGrid, createApiHandler } from '@paygrid/core/dist/server';
+import { initPayGrid, createApiHandler } from '@qhristen/paygrid/server';
 
 // Initialize PayGrid (this is a singleton-like initialization for the route)
 let paygridPromise: ReturnType<typeof initPayGrid> | null = null;

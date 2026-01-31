@@ -1,6 +1,6 @@
 {
-  "name": "@paygrid/core",
-  "version": "0.1.0",
+  "name": "@qhristen/paygrid",
+  "version": "0.1.1",
   "description": "Self-hosted Web3 payments infrastructure for Solana",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -51,6 +51,16 @@
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "^5.6.3"
+  },
+   "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./dashboard": "./dist/dashboard/index.js",
+    "./checkout": "./dist/checkout/index.js",
+    "./core": "./dist/core/paygrid.js",
+    "./server": "./dist/server.js"
   },
   "peerDependencies": {
     "next": ">=13.0.0",

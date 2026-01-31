@@ -46,7 +46,7 @@ export const CONSTANTS = {
 
 
 export const SUPPORTED_TOKENS = [
-  { symbol: 'SOL', mint: '11111111111111111111111111111111', color: '#14F195' },
-  { symbol: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', color: '#2775CA' },
-  { symbol: 'BONK', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', color: '#FFA500' }
+  { symbol: 'SOL', mint: '11111111111111111111111111111111', color: '#14F195', disabled: true },
+  { symbol: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', color: '#2775CA', disabled: false },
+  { symbol: 'BONK', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', color: '#FFA500', disabled: true }
 ];
