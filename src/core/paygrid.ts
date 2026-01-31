@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { DepositResponse } from "@radr/shadowwire";
 import crypto from "crypto";
 import { AuthService } from "../auth";
 import { SolanaService } from "../blockchain";
@@ -13,7 +13,6 @@ import {
   TokenSymbol,
 } from "../types";
 import { PrivacyWrapper } from "./privacy-wrapper";
-import { DepositResponse } from "@radr/shadowwire";
 
 export class PayGrid {
   private db: PayGridDB;
@@ -197,6 +196,33 @@ export class PayGrid {
   async getPayments() {
     return await this.db.getAllPayments();
   }
+  async deposit(
+    amount: number,
+    walletAddress: string,
+    tokenMint: string,
+    symbol: string,
+  ) {
+    return await this.privacy.createDepositTransaction({
+      amount,
+      walletAddress,
+      tokenMint,
+      symbol,
+    });
+  }
+  async transfer({
+    symbol,
+    sender,
+    amount,
+  }: {
+    symbol: string;
+    sender: string;
+    amount: number;
+  }) {
+    return await this.privacy.transfer({ symbol, sender, amount });
+  }
+  async withdraw({ symbol, recipient }: { symbol: string; recipient: string }) {
+    return await this.privacy.withdraw({ symbol, recipient });
+  }
 
   async getAnalytics(days: number = 30): Promise<AnalyticsData> {
     const payments = await this.db.getAllPayments();
@@ -281,8 +307,8 @@ export class PayGrid {
         symbol: params.tokenSymbol,
       });
 
-      console.log(res, "withdrawal response")
-      return res
+      console.log(res, "withdrawal response");
+      return res;
     } catch (error) {
       console.error("Error withdrawing from privacy:", error);
       throw error;
@@ -298,7 +324,7 @@ export class PayGrid {
       const res = await this.privacy.transfer({
         symbol: params.tokenSymbol,
         amount: params.amount,
-        sender: params.sender
+        sender: params.sender,
       });
     } catch (error) {
       console.error("Error withdrawing from privacy:", error);

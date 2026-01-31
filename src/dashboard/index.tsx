@@ -5,13 +5,13 @@ import { clsx, type ClassValue } from "clsx";
 import { LogOut, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-    Area,
-    AreaChart,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { twMerge } from "tailwind-merge";
 import { logout } from "../auth/actions";

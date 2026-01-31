@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { SUPPORTED_TOKENS } from "../config";
-import { PayGridResponseType, PaymentIntent, PaymentMethod } from "../types";
 import {
   initWASM,
   isWASMSupported,
   ShadowWireClient,
   TokenSymbol,
 } from "@radr/shadowwire";
+import { useEffect, useState } from "react";
+import { SUPPORTED_TOKENS } from "../config";
+import { PayGridResponseType, PaymentIntent, PaymentMethod } from "../types";
 
 export interface CheckoutModalProps {
   amount: number;

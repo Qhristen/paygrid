@@ -59,7 +59,7 @@
     },
     "./dashboard": "./dist/dashboard/index.js",
     "./checkout": "./dist/checkout/index.js",
-    "./core": "./dist/core/paygrid.js",
+    "./core": "./dist/core/index.js",
     "./server": "./dist/server.js"
   },
   "peerDependencies": {

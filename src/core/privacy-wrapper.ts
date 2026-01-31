@@ -1,3 +1,4 @@
+import { validateConfig } from "../config";
 import { PayGridConfig, TokenSymbol as Symbol } from "../types";
 import {
   DepositResponse,
@@ -36,6 +37,8 @@ export class PrivacyWrapper {
       return;
     }
 
+    console.log(balance, "balance");
+
     const amount =
       symbol === Symbol.SOL
         ? (balance?.available ?? 0) / 1e9
@@ -56,12 +59,13 @@ export class PrivacyWrapper {
     sender: string;
     amount: number;
   }) {
+    console.log(sender, symbol, amount, "transfer");
     return await this.client.transfer({
       amount,
       recipient: this.config.marchantWalletADdress,
       sender,
       token: symbol as TokenSymbol,
-      type: "internal",
+      type: "external",
     });
   }
 
@@ -111,4 +115,14 @@ export class PrivacyWrapper {
       );
     }
   }
+}
+
+export async function initWrapper(config?: Partial<PayGridConfig>) {
+  const fullConfig = config
+    ? { ...validateConfig(), ...config }
+    : validateConfig();
+
+  const paygrid = new PrivacyWrapper(fullConfig);
+
+  return paygrid;
 }

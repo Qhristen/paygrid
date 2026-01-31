@@ -8,6 +8,7 @@ import {
   PayGridWithdrawalResponseType,
   PayGridTransferResponseType,
 } from "@qhristen/paygrid";
+import { initWrapper } from "@qhristen/paygrid/core";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection } from "@solana/web3.js";
 import { useState } from "react";
@@ -72,37 +73,20 @@ export default function Home() {
         connection,
         signTransaction,
       );
+      const wrapper = await initWrapper();
 
-      const headers: Record<string, string> = {};
-      if (apiKey) headers["x-api-key"] = apiKey;
-
-      const response = await fetch("/api/paygrid/privacy-transfer", {
-        method: "POST",
-        headers: {
-          ...headers,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tokenSymbol: paygridResponse.tokenSymbol,
-          amount: paygridResponse.amount,
-          sender: publicKey,
-        }),
+      const res = await wrapper.transfer({
+        symbol: paygridResponse.tokenSymbol,
+        amount: paygridResponse.amount,
+        sender: publicKey.toBase58(),
       });
 
-      if (!response.ok) {
-        throw new Error(
-          `Payment intent creation failed: ${response.statusText}`,
-        );
-      }
-
-      const data = (await response.json()) as PayGridTransferResponseType;
-
+      console.log(res, "transfer response");
       // await signSolanaTransaction(
       //   data.tx_signature,
       //   connection,
       //   signTransaction,
       // );
-
     } catch (error) {
       console.error("Error signing/sending transaction:", error);
       throw error;
@@ -169,7 +153,7 @@ export default function Home() {
           onClick={handleWithdrawal}
           className="bg-white/5 hover:bg-white/10 cursor-pointer border border-white/10 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all"
         >
-         {loading ? "Processing...": " Withdraw"}
+          {loading ? "Processing..." : " Withdraw"}
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 mt-4 lg:grid-cols-3 gap-8">
