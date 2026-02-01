@@ -36,15 +36,20 @@ export class PayGrid {
   async init() {
     await this.db.init();
 
-    const apiKeys = await this.listApiKeys();
-    if (apiKeys.length === 0) {
-      const { key } = await this.createApiKey("default");
-      console.log(`
+    try {
+      const apiKeys = await this.listApiKeys();
+      if (apiKeys.length === 0) {
+        const { key, apiKey } = await this.createApiKey("default");
+        console.log(`
       *****************************************
       🔑 Created default API key: ${key}
       Please save this key, it won't be shown again.
       *****************************************
       `);
+      }
+    } catch (error) {
+      console.error("Error during PayGrid initialization:", error);
+      throw error;
     }
   }
 
