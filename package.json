@@ -1,6 +1,6 @@
 {
   "name": "@qhristen/paygrid",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Self-hosted Web3 payments infrastructure for Solana",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
     "test:drive": "tsx test-drive.ts",
     "prepublishOnly": "npm run build",
     "lint": "tsc --noEmit",
-    "copy-assets": "cp -r src/assets dist/assets"
+    "copy-assets": "cp -r src/assets dist/assets && cp -r src/wasm dist/wasm"
   },
   "keywords": [
     "solana",
@@ -62,7 +62,7 @@
     "./checkout": "./dist/checkout/index.js",
     "./core": "./dist/core/index.js",
     "./server": "./dist/server.js",
-    "./logo.png": "./dist/assets/paygrid_icon_transparent.png"
+    "./settler_wasm_bg.wasm": "./dist/wasm/wasm/settler_wasm_bg.wasm"
   },
   "peerDependencies": {
     "next": ">=13.0.0",

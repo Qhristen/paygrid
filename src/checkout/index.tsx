@@ -14,6 +14,7 @@ import "../index.css";
 import Image from "next/image";
 
 const logoUrl = new URL("../assets/paygrid_icon_transparent.png", import.meta.url).toString();
+const wasmUrl = new URL("../wasm/settler_wasm_bg.wasm", import.meta.url).toString();
 
 
 export interface CheckoutModalProps {
@@ -62,7 +63,7 @@ export function CheckoutModal({
       }
 
       try {
-        await initWASM("/wasm/settler_wasm_bg.wasm");
+        await initWASM(wasmUrl);
         setWasmInitialized(true);
         await loadBalance();
       } catch (err: any) {
