@@ -1,4 +1,4 @@
-import { initPayGrid } from './src/index';
+import { initPayGrid } from './src/server';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -9,7 +9,7 @@ async function testDrive() {
   const testKeypair = Keypair.generate();
   
   // Set mock environment variables
-  process.env.SOLANA_RPC_URL = 'https://api.devnet.solana.com';
+  process.env.NEXT_PUBLIC_SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com';
   process.env.TREASURY_PRIVATE_KEY = bs58.encode(testKeypair.secretKey);
   process.env.NEXT_PUBLIC_PAYGRID_API_SECRET = 'super_secret_test_key_at_least_32_chars_long';
   process.env.NETWORK = 'devnet';
@@ -33,7 +33,8 @@ async function testDrive() {
     console.log('💳 Creating Manual Transfer Intent...');
     const manualIntent = await paygrid.createPaymentIntent({
       amount: 0.1,
-      tokenMint: 'SOL',
+      tokenSymbol: 'SOL',
+      sender: "",
       method: 'manual-transfer',
       metadata: { customer: 'Testing User' }
     });

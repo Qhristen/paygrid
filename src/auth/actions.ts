@@ -37,5 +37,6 @@ export async function logout() {
     path: '/',
     maxAge: 0,
   });
+  cookieStore.delete("paygrid_admin_session")
   redirect('/');
 }

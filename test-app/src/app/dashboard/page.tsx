@@ -1,11 +1,11 @@
 'use client';
 
-import { PayGridDashboard } from '@paygrid/core';
-import '@paygrid/core/dist/index.css';
+import { PayGridDashboard } from '@qhristen/paygrid';
+
 
 export default function DashboardPage() {
     return (
-        <div className="min-h-screen bg-slate-950">
+        <div>
             <PayGridDashboard />
         </div>
     );

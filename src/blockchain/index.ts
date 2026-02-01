@@ -1,37 +1,23 @@
-import { Connection, Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, sendAndConfirmTransaction } from '@solana/web3.js';
-import bs58 from 'bs58';
-import { PaymentIntent } from '../types';
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey
+} from "@solana/web3.js";
+import bs58 from "bs58";
 
 export class SolanaService {
   private connection: Connection;
-  private treasuryWallet: Keypair;
 
-  constructor(rpcUrl: string, treasuryPrivateKey: string) {
-    this.connection = new Connection(rpcUrl, 'confirmed');
-    this.treasuryWallet = Keypair.fromSecretKey(bs58.decode(treasuryPrivateKey));
+  constructor(rpcUrl: string) {
+    this.connection = new Connection(rpcUrl, "confirmed");
+    
   }
 
-  getTreasuryPublicKey(): string {
-    return this.treasuryWallet.publicKey.toBase58();
-  }
-
-  async createTransferTransaction(fromPubkey: string, amount: number): Promise<string> {
-    const transaction = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: new PublicKey(fromPubkey),
-        toPubkey: this.treasuryWallet.publicKey,
-        lamports: amount * LAMPORTS_PER_SOL,
-      })
-    );
-
-    const { blockhash } = await this.connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = new PublicKey(fromPubkey);
-
-    return transaction.serialize({ requireAllSignatures: false }).toString('base64');
-  }
-
-  async generateTemporaryWallet(): Promise<{ publicKey: string; privateKey: string }> {
+  async generateTemporaryWallet(): Promise<{
+    publicKey: string;
+    privateKey: string;
+  }> {
     const keypair = Keypair.generate();
     return {
       publicKey: keypair.publicKey.toBase58(),
@@ -46,20 +32,31 @@ export class SolanaService {
 
   async confirmTransaction(signature: string): Promise<boolean> {
     try {
-      const result = await this.connection.confirmTransaction(signature, 'confirmed');
+      const result = await this.connection.confirmTransaction(
+        signature,
+        "confirmed",
+      );
       return !result.value.err;
     } catch (error) {
-      console.error('Error confirming transaction:', error);
+      console.error("Error confirming transaction:", error);
       return false;
     }
   }
 
-  async findTransferTo(targetWallet: string, amount: number): Promise<string | null> {
+  async findTransferTo(
+    targetWallet: string,
+    amount: number,
+  ): Promise<string | null> {
     const pubkey = new PublicKey(targetWallet);
-    const signatures = await this.connection.getSignaturesForAddress(pubkey, { limit: 10 });
-    
+    const signatures = await this.connection.getSignaturesForAddress(pubkey, {
+      limit: 10,
+    });
+
     for (const sigInfo of signatures) {
-      const tx = await this.connection.getTransaction(sigInfo.signature, { commitment: 'confirmed' });
+      const tx = await this.connection.getTransaction(sigInfo.signature, {
+        commitment: "confirmed",
+          maxSupportedTransactionVersion: 0, // 👈 REQUIRED now
+      });
       if (!tx) continue;
 
       // Basic SOL transfer check - this is simplified for now
@@ -69,13 +66,15 @@ export class SolanaService {
 
       const preBalances = meta.preBalances;
       const postBalances = meta.postBalances;
-      const accountKeys = tx.transaction.message.accountKeys;
-      
-      const targetIndex = accountKeys.findIndex(key => key.equals(pubkey));
+      const accountKeys = tx.transaction.message.staticAccountKeys;
+
+      const targetIndex = accountKeys.findIndex((key) => key.equals(pubkey));
       if (targetIndex === -1) continue;
 
-      const receivedAmount = (postBalances[targetIndex] - preBalances[targetIndex]) / LAMPORTS_PER_SOL;
-      
+      const receivedAmount =
+        (postBalances[targetIndex] - preBalances[targetIndex]) /
+        LAMPORTS_PER_SOL;
+
       if (receivedAmount >= amount) {
         return sigInfo.signature;
       }

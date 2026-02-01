@@ -1,13 +1,15 @@
 # PayGrid
 
-**PayGrid** is a self-hosted, embeddable Web3 payments infrastructure for Solana. It allows you to accept SOL and SPL token payments directly within your Next.js application without relying on third-party payment processors.
+PayGrid is a self-hosted, open source embeddable Web3 payments infrastructure built on Solana, designed with privacy at its core. It enables businesses to accept SOL and SPL token payments directly within their applications through encrypted payment flows and a privacy-focused architecture that keeps sensitive transaction data under the business’s control. With no third-party processors involved, PayGrid delivers secure payments, full data ownership, and built-in analytics in a single infrastructure layer.
+
+with privacy powered by [ShadowWire](https://github.com/Radrdotfun/ShadowWire "ShadowWire")
 
 ---
 
 ## 🚀 Features
 
 - **Self-Hosted:** Full control over your data and treasury keys.
-- **Dual Payment Flows:** 
+- **Dual Payment Flows:**
   - **Wallet-Signing:** Direct transaction signing with Solana wallets (Phantom, Solflare, etc.).
   - **Manual Transfer:** Unique temporary wallet generation for manual transfers.
 - **Embedded Dashboard:** Built-in React components for managing payments and API keys.
@@ -19,7 +21,7 @@
 ## 🛠 Installation
 
 ```bash
-npm install @paygrid/core
+npm install @qhristen/paygrid
 ```
 
 ---
@@ -31,12 +33,13 @@ npm install @paygrid/core
 Create a `.env` file in your Next.js project:
 
 ```bash
-SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-TREASURY_PRIVATE_KEY=YourBase58PrivateKey...
-NEXT_PUBLIC_PAYGRID_API_SECRET=at_least_32_character_random_string_for_paygrid_test
-=at_least_32_character_random_string
-DB_PATH=./paygrid.db # Default
-NETWORK=mainnet-beta # Or devnet
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+NEXT_PUBLIC_MERCHANT_WALLET_ADDRESS=
+NEXT_PUBLIC_PAYGRID_API_SECRET=
+DB_PATH=../test.db
+NEXT_PUBLIC_NETWORK=mainnet-beta
+NEXT_PUBLIC_ADMIN_EMAIL=admin-test@paygrid.com
+NEXT_PUBLIC_ADMIN_PASSWORD=securepassword12345
 ```
 
 ### 2. Initialize PayGrid (API Route)
@@ -44,8 +47,8 @@ NETWORK=mainnet-beta # Or devnet
 Create a file at `app/api/paygrid/[...path]/route.ts`:
 
 ```typescript
-import { initPayGrid } from '@paygrid/core';
-import { createApiHandler } from '@paygrid/core/api';
+import { initPayGrid } from "@qhristen/paygrid";
+import { createApiHandler } from "@qhristen/paygrid/server";
 
 // Initialize core
 const paygrid = await initPayGrid();
@@ -61,10 +64,9 @@ export { handler as GET, handler as POST };
 Create a dashboard page at `app/dashboard/payments/page.tsx`:
 
 ```tsx
-'use client';
+"use client";
 
-import { PayGridDashboard } from '@paygrid/core';
-import '@paygrid/core/dist/index.css'; // Import the isolated styles
+import { PayGridDashboard } from "@qhristen/paygrid";
 
 export default function DashboardPage() {
   return (
@@ -82,22 +84,22 @@ export default function DashboardPage() {
 ### Create a Payment Intent
 
 ```typescript
-const response = await fetch('/api/paygrid/payment-intents', {
-  method: 'POST',
+const response = await fetch("/api/paygrid/payment-intents", {
+  method: "POST",
   headers: {
-    'x-api-key': 'your_api_key',
-    'Content-Type': 'application/json'
+    "x-api-key": "your_api_key",
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({
     amount: 1.5,
-    tokenMint: 'SOL',
-    method: 'wallet-signing', // or 'manual-transfer'
-    metadata: { orderId: '12345' }
-  })
+    tokenMint: "SOL",
+    method: "wallet-signing", // or 'manual-transfer'
+    metadata: { orderId: "12345" },
+  }),
 });
 
 const intent = await response.json();
-console.log('Payment Intent Created:', intent.id);
+console.log("Payment Intent Created:", intent.id);
 ```
 
 ---
@@ -116,7 +118,7 @@ console.log('Payment Intent Created:', intent.id);
 - `blockchain/`: Solana Web3.js integration and watchers.
 - `db/`: Embedded SQLite storage.
 - `api/`: Next.js request handlers.
-- `dashboard/`: React UI components.
+- `dashboard/` & `checkout/`: React UI components.
 - `auth/`: API key generation and validation.
 
 ---
