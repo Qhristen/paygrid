@@ -1,6 +1,6 @@
 {
   "name": "@qhristen/paygrid",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Self-hosted Web3 payments infrastructure for Solana",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

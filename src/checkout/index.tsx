@@ -120,7 +120,7 @@ export function CheckoutModal({
       }
 
       setActiveIntent(data);
-      // setStep("paying");
+      setStep("success");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
