@@ -1,6 +1,8 @@
 # PayGrid
 
-**PayGrid** is a self-hosted, embeddable Web3 payments infrastructure for Solana. It allows you to accept SOL and SPL token payments directly within your Next.js application without relying on third-party payment processors.
+PayGrid is a self-hosted, open source embeddable Web3 payments infrastructure built on Solana, designed with privacy at its core. It enables businesses to accept SOL and SPL token payments directly within their applications through encrypted payment flows and a privacy-focused architecture that keeps sensitive transaction data under the business’s control. With no third-party processors involved, PayGrid delivers secure payments, full data ownership, and built-in analytics in a single infrastructure layer.
+
+with privacy powered by [ShadowWire](https://github.com/Radrdotfun/ShadowWire "ShadowWire")
 
 ---
 

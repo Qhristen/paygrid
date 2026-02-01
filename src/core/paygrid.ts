@@ -35,16 +35,22 @@ export class PayGrid {
 
   async init() {
     await this.db.init();
+
+    const apiKeys = await this.listApiKeys();
+    if (apiKeys.length === 0) {
+      const { key } = await this.createApiKey("default");
+      console.log(`
+      *****************************************
+      🔑 Created default API key: ${key}
+      Please save this key, it won't be shown again.
+      *****************************************
+      `);
+    }
   }
 
   async startWatcher() {
     console.log("🚀 PayGrid Watcher started");
     // Run immediately once
-
-    const apiKeys = await this.listApiKeys();
-    if (apiKeys.length === 0) {
-      await this.createApiKey("default");
-    }
 
     await this.checkPendingPayments();
 

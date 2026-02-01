@@ -23,6 +23,10 @@ import PaymentsTable from "./payment-table";
 
 // @ts-ignore
 import  '../index.css'
+import Image from "next/image";
+
+const logoUrl = new URL("../assets/paygrid_icon_transparent.png", import.meta.url).toString();
+
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -337,8 +341,8 @@ export function PayGridDashboard({
         <div className="p-6">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg">
-                P
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-lg">
+                <Image src={logoUrl} alt="LogoTransparent" width={100} height={1000} />
               </div>
               <span className="font-bold text-xl tracking-tight">PayGrid</span>
             </div>

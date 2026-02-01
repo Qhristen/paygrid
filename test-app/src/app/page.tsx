@@ -52,6 +52,8 @@ export const SAMPLE_PRODUCTS = [
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const { signTransaction, publicKey, connected } = useWallet();
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
   const connection = new Connection(
     process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "",
     "confirmed",
@@ -63,6 +65,8 @@ export default function Home() {
     if (!publicKey || !signTransaction || !connected) {
       throw new Error("Wallet not connected");
     }
+    setIsCheckoutOpen(true);
+
     try {
       await signSolanaTransaction(
         paygridResponse.depositResponse.unsigned_tx_base64,
@@ -79,9 +83,10 @@ export default function Home() {
       });
 
       console.log(res, "transfer response");
-
+      setIsCheckoutOpen(false);
     } catch (error) {
       console.error("Error signing/sending transaction:", error);
+      setIsCheckoutOpen(false);
       throw error;
     }
   };
@@ -188,6 +193,8 @@ export default function Home() {
                 sender={publicKey?.toBase58().toString() as string}
                 tokenSymbol={product.tokenSymbol}
                 onPaymentResponse={(res) => handleCheckout(res)}
+                isOpen={isCheckoutOpen}
+                onClose={() => setIsCheckoutOpen(!isCheckoutOpen)}
               />
             </div>
           </div>

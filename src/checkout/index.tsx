@@ -10,7 +10,11 @@ import { useEffect, useState } from "react";
 import { SUPPORTED_TOKENS } from "../config";
 import { PayGridResponseType, PaymentIntent, PaymentMethod } from "../types";
 // @ts-ignore
-import  '../index.css'
+import "../index.css";
+import Image from "next/image";
+
+const logoUrl = new URL("../assets/paygrid_icon_transparent.png", import.meta.url).toString();
+
 
 export interface CheckoutModalProps {
   amount: number;
@@ -18,6 +22,8 @@ export interface CheckoutModalProps {
   tokenSymbol: string;
   sender: string;
   onPaymentResponse?: (response: PayGridResponseType) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function CheckoutModal({
@@ -26,8 +32,9 @@ export function CheckoutModal({
   tokenSymbol: propsTokenSymbol,
   sender: propsSender,
   onPaymentResponse,
+  isOpen,
+  onClose,
 }: CheckoutModalProps) {
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [step, setStep] = useState<"config" | "paying" | "success">("config");
   const [selectedToken, setSelectedToken] = useState(propsTokenSymbol);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(
@@ -99,7 +106,7 @@ export function CheckoutModal({
           sender: propsSender,
         }),
       });
-      // setStep("paying");
+      setStep("paying");
       if (!response.ok) {
         throw new Error(
           `Payment intent creation failed: ${response.statusText}`,
@@ -113,7 +120,7 @@ export function CheckoutModal({
       }
 
       setActiveIntent(data);
-      setStep("paying");
+      // setStep("paying");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
@@ -127,30 +134,35 @@ export function CheckoutModal({
   return (
     <div>
       <button
-        onClick={() => setIsCheckoutOpen(true)}
+        onClick={() => onClose()}
         className="bg-white/5 hover:bg-white/10 cursor-pointer border border-white/10 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all"
       >
         Pay now
       </button>
 
-      {isCheckoutOpen && (
+      {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={() => setIsCheckoutOpen(false)}
+            onClick={() => onClose()}
           ></div>
 
           <div className="relative w-full max-w-md bg-[#111] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center text-[10px] font-bold">
-                    P
+                  <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold">
+                    <Image
+                      src={logoUrl}
+                      alt="LogoTransparent"
+                      width={100}
+                      height={1000}
+                    />
                   </div>
                   <span className="font-bold">PayGrid checkout</span>
                 </div>
                 <button
-                  onClick={() => setIsCheckoutOpen(false)}
+                  onClick={() => onClose()}
                   className="text-gray-500 cursor-pointer hover:text-white"
                 >
                   &times;
@@ -283,7 +295,7 @@ export function CheckoutModal({
                 </div>
               )}
 
-              {step === "success" && (
+              {step === "success" && !isLoading && (
                 <div className="text-center py-8">
                   <div className="w-20 h-20 bg-emerald-500/20 text-emerald-500 rounded-full mx-auto flex items-center justify-center text-4xl mb-6">
                     ✓

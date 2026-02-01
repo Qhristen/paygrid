@@ -9,13 +9,14 @@
   ],
   "scripts": {
     "dev": "tsc -w",
-    "build": "npm run clean && npm run build:css && tsc",
+    "build": "npm run clean && npm run build:css && tsc && npm run copy-assets",
     "build:css": "tailwindcss -i ./src/index.css -o ./dist/index.css --minify",
     "clean": "rimraf dist",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:drive": "tsx test-drive.ts",
     "prepublishOnly": "npm run build",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "copy-assets": "cp -r src/assets dist/assets"
   },
   "keywords": [
     "solana",
@@ -52,7 +53,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.6.3"
   },
-   "exports": {
+  "exports": {
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
@@ -60,7 +61,8 @@
     "./dashboard": "./dist/dashboard/index.js",
     "./checkout": "./dist/checkout/index.js",
     "./core": "./dist/core/index.js",
-    "./server": "./dist/server.js"
+    "./server": "./dist/server.js",
+    "./logo.png": "./dist/assets/paygrid_icon_transparent.png"
   },
   "peerDependencies": {
     "next": ">=13.0.0",
